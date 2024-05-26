@@ -2,6 +2,7 @@ package org.example;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
@@ -10,39 +11,37 @@ public class CompletableFutureApp {
     private static final String DIR_PATH = "/home/andrey/work/projects/emm_git";
 
     public static void main(String[] args) {
-        int filesCount = getCountOfFilesInDir(DIR_PATH, ".java");
-        System.out.printf("Count of java files inside the dir = %d", filesCount);
+        CompletableFuture.supplyAsync(() -> findFilesInDir(DIR_PATH, "java"))
+                .thenApply(List::size)
+                .thenAccept(System.out::println)
+                .join();
     }
 
-    private static int getCountOfFilesInDir(String rootPath, String extension) {
+    private static List<File> findFilesInDir(String rootPath, String extension) {
         File rootDir = new File(rootPath);
-        return getCountOfFilesInDir(rootDir, extension);
+        return findFilesInDir(rootDir, extension);
     }
 
-    private static int getCountOfFilesInDir(File dir, String extension) {
+    private static List<File> findFilesInDir(File dir, String extension) {
         return CompletableFuture.supplyAsync(() -> {
-            if (!dir.exists() || !dir.isDirectory()) {
-                return 0;
-            }
-
-            int countOfFilesInDir = 0;
             List<File> dirs = new ArrayList<>();
+            LinkedList<File> files = new LinkedList<>();
 
             for (File file : dir.listFiles()) {
                 if (file.isDirectory()) {
                     dirs.add(file);
                 } else {
                     if (file.getName().endsWith(extension)) {
-                        countOfFilesInDir++;
+                        files.add(file);
                     }
                 }
             }
 
-            int countOfFilesInSubDirs = dirs.stream()
-                    .map(subDir -> getCountOfFilesInDir(subDir, extension))
-                    .reduce(0, Integer::sum);
+            dirs.stream()
+                    .map(subDir -> findFilesInDir(subDir, extension))
+                    .forEach(files::addAll);
 
-            return countOfFilesInDir + countOfFilesInSubDirs;
+            return files;
         }).join();
     }
 }
