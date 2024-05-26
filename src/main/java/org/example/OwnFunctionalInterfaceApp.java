@@ -1,6 +1,6 @@
 package org.example;
 
-public class Main {
+public class OwnFunctionalInterfaceApp {
     public static void main(String[] args) {
         MyFunction<String, Integer> parseIntFunction = Integer::parseInt;
         MyFunction<String, Integer> squareStringInt = parseIntFunction.andThen(x -> x * x);
